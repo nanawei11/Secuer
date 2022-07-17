@@ -1,0 +1,41 @@
+---
+# filter cell
+cell:
+  min_counts:  # type: int, default by None
+  min_genes: 200
+  max_counts:  # type: int, default by None
+  max_genes:   # type: int, default by None
+
+---
+# filter gene
+gene:
+  min_counts:  # type: int, default by None
+  min_cells: 3
+  max_counts:  # type: int, default by None
+  max_cells:   # type: int, default by None
+
+---
+# normalize parameters
+norm:
+  target_sum:  10000
+  exclude_highly_expressed: False
+  max_fraction: 0.05
+---
+# highly variable genes
+hvg:
+  n_top_genes: 2000  # Ignored if flavor != 'seuratv3'
+  min_disp: 0.5      # Ignored if `flavor = 'seurat_v3'
+  min_mean: 0.0125   # Ignored if `flavor = 'seurat_v3'
+  max_mean: 3        # Ignored if `flavor = 'seurat_v3'
+  span: 0.3          # Ignored if `flavor != 'seurat_v3'
+  n_bins: 20
+  flavor: 'seurat'   # Literal['seurat', 'cell_ranger', 'seurat_v3']
+
+---
+# pca
+pca:
+  n_comps: 50
+  zero_center: True
+  svd_solver: 'arpack'
+  random_state:  0
+

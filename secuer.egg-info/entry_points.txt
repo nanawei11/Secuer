@@ -1,0 +1,2 @@
+[console_scripts]
+secuer = bin.secuer_console:main
