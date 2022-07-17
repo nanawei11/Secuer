@@ -43,11 +43,12 @@ You can also specify the following options:
 
   The number of anchors, default by 1000.
 
-* -o OUTFILE
+* -o 
 
   Output file directory and file name, default by output.
 
-- --knn
+- --knn 
+
   The number of k nearest neighbors anchors, default by 7.
 
 - --distance
