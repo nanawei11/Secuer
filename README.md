@@ -60,19 +60,11 @@ You can also specify the following options:
   Specify the gapth largest value when `--eskMethod`  is not subGraph.
 
   
-
-Example for run Secuer with all default parameters:
-
-```sh
-$ Secuer S -i ./example_data/deng-rpkms.csv
-```
 Example for run Secuer with custom parameters:
 
 ```sh
-$ Secuer S -i ./example_data/deng-rpkms.csv -o ./deng_result -p 900 --knn 5 --transpose
+$ Secuer S -i ./example_data/deng-rpkms.csv -o ./deng_result -p 1000 --knn 5 --transpose
 ```
-
-
 
 ## Run Seucer-consensus (usage)
 
@@ -106,13 +98,9 @@ You can also specify the following options:
 - --transpose
   Require it if your data is a .csv, .txt or tsv file with genes by cells, default by False.
 
+Example for run Secuer-consensus:
 ```sh
-$ Secuer C -i ./example_data/deng-rpkms.csv
-```
-
-Example for run Secuer-consensus with all default parameters:
-```sh
-$ Secuer C -i ./example_data/deng-rpkms.csv -o ./deng_conresult  -p 900 --knn 5 -M 7
+$ Secuer C -i ./example_data/deng-rpkms.csv -o ./deng_conresult  -p 900 --knn 5 -M 7 --transpose
 ```
 
 
