@@ -119,8 +119,6 @@ $ Secuer C -i ./example_data/deng-rpkms.csv -o ./deng_conresult  -p 900 --knn 5 
 
 ## Output files
 
-1. `output/output.txt` is the clustering.
-2. `output/umap.pdf`   
-3. `output/tsne.pdf`  
+1. `output/output.txt` is the clustering. 
 
 ## Citation
