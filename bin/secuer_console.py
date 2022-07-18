@@ -170,7 +170,7 @@ def main():
              \t\ncm: {args.clusterMethod}\
              \t\noutfile:{args.outfile},\t\nseed:{args.seed}.")
         logg.info('Reading data...')
-        data = Read(args.inputfile,args.istranspose)
+        data = Read(args.inputfile,istranspose=args.istranspose)
         logg.war(f'Your data contains {data.shape[0]} observations and {data.shape[1]} features.')
         data.var_names_make_unique()
         
@@ -191,16 +191,19 @@ def main():
         sc.pp.normalize_total(data, target_sum=params['norm']['target_sum'])
         
         sc.pp.log1p(data)
-        logg.info('selecting highly varibale genes...') 
-        sc.pp.highly_variable_genes(data, 
-            min_mean=params['hvg']['min_mean'], 
-            max_mean=params['hvg']['max_mean'], 
-            min_disp=params['hvg']['min_disp'],
-            flavor=params['hvg']['flavor'],
-            n_top_genes=params['hvg']['n_top_genes'],
-            span=params['hvg']['span'])
-        data = data[:, data.var.highly_variable]
-        sc.pp.scale(data, max_value=10)
+        logg.info('selecting highly varibale genes...')
+        try:
+            sc.pp.highly_variable_genes(data, 
+                min_mean=params['hvg']['min_mean'], 
+                max_mean=params['hvg']['max_mean'], 
+                min_disp=params['hvg']['min_disp'],
+                flavor=params['hvg']['flavor'],
+                n_top_genes=params['hvg']['n_top_genes'],
+                span=params['hvg']['span'])
+            data = data[:, data.var.highly_variable]
+            sc.pp.scale(data, max_value=10)
+        except:
+            sc.pp.scale(data, max_value=10)
         
         logg.info('performing PCA...')
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
@@ -249,7 +252,7 @@ def main():
         params = get_yaml_load_all(yaml_path)
         logg = Logger()
         print(f'Reading data...\n')
-        data = Read(args.inputfile,args.istranspose)
+        data = Read(args.inputfile,istranspose=args.istranspose)
         logg.war(f'Your data contains {data.shape[0]} observations and {data.shape[1]} features.')
         print('processing....\n')
         data.var_names_make_unique()
