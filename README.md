@@ -18,11 +18,11 @@ pip install secuer
 
 #### Essential parameters
 
-To run Secuer with default parameters, you only need to give:
+To run Secuer with default parameters, you only need to specify:
 
 - -i INPUTFILE 
 
-  two-dimensional data (observations by features) file for clustering. 
+  scRNA-seq data (cells by genes) file for clustering. 
 
 #### options
 You can also specify the following options:
@@ -78,7 +78,7 @@ $ Secuer S -i ./example_data/deng-rpkms.csv -o ./deng_result -p 900 --knn 5 --tr
 
 #### Essential parameters
 
-To run Secuer-consensus with default parameters, you only need to give:
+To run Secuer-consensus with default parameters, you only need to specify:
 
 - -i INPUTFILE 
 
@@ -104,7 +104,7 @@ You can also specify the following options:
 ​		The number of k nearest neighbors anchors, default by 7.
 
 - --transpose
-  Require it if your data is a .csv, .txt or tsv file with features by observations, default by False.
+  Require it if your data is a .csv, .txt or tsv file with genes by cells, default by False.
 
 ```sh
 $ Secuer C -i ./example_data/deng-rpkms.csv
@@ -112,7 +112,7 @@ $ Secuer C -i ./example_data/deng-rpkms.csv
 
 Example for run Secuer-consensus with all default parameters:
 ```sh
-$ Secuer C -i ./example_data/deng-rpkms.csv -o ./deng_conresult -M 7 -p 900 --knn 5
+$ Secuer C -i ./example_data/deng-rpkms.csv -o ./deng_conresult  -p 900 --knn 5 -M 7
 ```
 
 
