@@ -26,7 +26,7 @@ To run Secuer with default parameters, you only need to specify:
 
 * --yaml 
 
-  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) more details.
+  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) for more details.
 
 #### options
 You can also specify the following options:
@@ -87,7 +87,7 @@ To run Secuer-consensus with default parameters, you only need to specify:
 
 * --yaml 
 
-  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) more details.
+  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) for more details.
 
 #### options
 You can also specify the following options:
