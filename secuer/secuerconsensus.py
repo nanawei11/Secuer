@@ -9,17 +9,9 @@ import time
 import pandas as pd
 import sys
 from scipy.sparse import issparse, csr_matrix
-# sys.path.append(".")
-from secuer.secuer import (secuer,
-                    get_indices_distance_from_dense_matrix,
-                    pdist2_fast,
-                    kthLargestElement,
-                    Estimatekbyeigen,
-                    Tcut_for_bipartite_graph,
-                    EstimatekbysubGraph,
-                    NearestRepIndex,
-                    secuer)
+from secuer.secuer import (secuer, Tcut_for_bipartite_graph)
 # random_rep=True,adj_param=False can remove
+# __all__ = ['secuerconsensus']
 def secuerconsensus(fea,
           k=None,
           run_secuer=True,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/secuer_console/env python
 # coding: utf-8
 import os
 from pathlib import Path
@@ -22,6 +22,8 @@ warnings.filterwarnings("ignore")
 import numba
 from numba import njit, prange
 numba.config.NUMBA_DEFAULT_NUM_THREADS=8
+
+# __all__ = ["secuer","Read", "Tcut_for_bipartite_graph"]
 
 def Read(filename,sheet = None,istranspose=False):
     '''  
