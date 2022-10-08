@@ -343,7 +343,7 @@ def secuer(fea, Ks=None,
         return labels, Ks
 
 if __name__ == '__main__':
-    file = 'D://My_data//Allproject//Secuer//Clustering0804//gold_label_data/'
+    file = 'data/'
     files = os.listdir(file)
     fileh5sd_gold = [i for i in files if i.endswith('.h5ad')]
     nmi_secuer=[]
@@ -373,34 +373,3 @@ if __name__ == '__main__':
                              index=['t_secuer', 'nmi_secuer', 'ari_secuer'],
                              columns = fileh5sd_gold)
     print(res_secuer.values)
-if __name__ == '__main__':
-    file = 'D://My_data//Allproject//Secuer//Clustering0804//gold_label_data/'
-    files = os.listdir(file)
-    fileh5sd_gold = [i for i in files if i.endswith('.h5ad')]
-    nmi_Secuer=[]
-    ari_Secuer=[]
-    t_Secuer=[]
-    for i in range(len(fileh5sd_gold)):
-        print(fileh5sd_gold[i])
-        data = sc.read(file + fileh5sd_gold[i])
-        fea = data.obsm['X_pca']
-        # print(f'{mtx[j]}: Secuer')
-        start = time.time()
-        # sc.pp.neighbors(data)
-        # sc.tl.louvain(data)
-        # res = data.obs['louvain']
-        res = secuer(fea, p=1000, Knn=7, maxTcutKmIters=100,
-                    cntTcutKmReps=3,seed=1)
-        end = time.time() - start
-        print(np.unique(res).shape[0],np.unique(data.obs['celltype']).shape[0])
-
-        name_up = 'Secuer_lable_' + str(i)
-        data.obs[name_up] = pd.Categorical(res)
-        nmi_Secuer.append(normalized_mutual_info_score(data.obs['celltype'], res))
-        ari_Secuer.append(adjusted_rand_score(data.obs['celltype'], res))
-        t_Secuer.append(end)
-        print()
-    res_Secuer = pd.DataFrame([t_Secuer, nmi_Secuer, ari_Secuer],
-                             index=['t_Secuer', 'nmi_Secuer', 'ari_Secuer'],
-                             columns = fileh5sd_gold)
-    print(res_Secuer.values)
