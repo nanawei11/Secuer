@@ -52,7 +52,7 @@ def get_indices_distance_from_dense_matrix(D, neighSize: int, returnDis=True):
     :param D: a distance matrix with
     :param neighSize:
     :param returnDis:
-    :return:
+    :return: The neignhor distances or neighbor indices. 
     '''
     sample_range = np.arange(D.shape[0])[:, None]
     indices = np.argpartition(D, neighSize, axis=1)[:, :neighSize]
@@ -264,6 +264,21 @@ def secuer(fea, Ks=None,
           clusterMethod='Kmeans',
           maxTcutKmIters=100,
           cntTcutKmReps=3):
+        '''
+    Cluster cell using Secuer.
+    :param fea: A expression matrix with cell by gene.
+    :param distance: str, default=euclidean. The metrics of distance. Can be sqeuclidean, euclidean, L1, cosine.
+    :param p: int, default=1000. The number of anchors.
+    :param knn: int, default=7. The number of neighbors of anchors for each cell.
+    :param mode: str, default=secuer. secuer for performing secuer or secuer-C when using secuerconsensus function.
+    :param eskMethod: str, default=subGraph. The methods to estimate the number of clusters: subGraph or bipart-eigen.
+    :param eskResolution: float, default=0.8. The resolution for estimating the clusters when using subGraph.The higher the resolution, the more clusters.
+    :param gapth: int, default=4. The gap values of estimating the clusters when using bipart-eigen.The higher the gapth, the more clusters.
+    :param clusterMethod: The final clustering methods in secuer. Can be k-means, DBSCAN and AgglomerativeClustering. Default by k-means
+    :param maxTcutKmIters: int, default=100. The maximum number of iterations for k-means.
+    :param cntTcutKmReps: int, default=3. Number of times with different centroid seeds in the k-means.
+    :return: 1D-array. The labels for each cell.
+    '''
     N = fea.shape[0]  # n*F
     if p > N:
         p = N
