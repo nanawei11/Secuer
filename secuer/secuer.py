@@ -212,8 +212,10 @@ def Tcut_for_bipartite_graph(B, Nseg,eskMethod, gapth=4,maxKmIters=100,
                      init='k-means++').fit(evec)
     elif clusterMethod == 'DBSCAN':
         lab = DBSCAN(eps=eps, min_samples=min_samples).fit(evec)
-    else:
+    elif clusterMethod=='AgglomerativeClustering':
         lab = AgglomerativeClustering(n_clusters=Nseg).fit(evec)
+    else:
+        print('Unknow clustering method.')
     return lab.labels_,Nseg
 
 def EstimatekbysubGraph(RpfeaDist, RpFeaKnnIdx, resolution, addweights,Knn=5):
