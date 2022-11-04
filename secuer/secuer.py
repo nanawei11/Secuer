@@ -1,6 +1,5 @@
 #!/usr/secuer_console/env python
 # coding: utf-8
-import os
 from pathlib import Path
 import yaml
 from scipy.linalg import eigh
@@ -20,10 +19,31 @@ import igraph as ig
 import louvain
 warnings.filterwarnings("ignore")
 import numba
-from numba import njit, prange
-numba.config.NUMBA_DEFAULT_NUM_THREADS=8
+from multiprocessing.pool import ThreadPool as Pool
+from functools import partial
+import logging
+# numba.config.NUMBA_DEFAULT_NUM_THREADS=8
 
 # __all__ = ["secuer","Read", "Tcut_for_bipartite_graph"]
+
+class Logger:
+    def __init__(self):
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.INFO)
+        self.logger.handlers.clear()
+        fmt = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+        logg = logging.StreamHandler()
+        logg.setFormatter(fmt)
+        self.logger.addHandler(logg)
+
+    def info(self, message):
+        self.logger.info(message)
+
+    def war(self, message):
+        self.logger.warn(message)
+
+    def error(self, message):
+        self.logger.error(message)
 
 def Read(filename,sheet = None,istranspose=False):
     '''  
@@ -38,21 +58,16 @@ def Read(filename,sheet = None,istranspose=False):
             data = sc.read_10x_h5(filename)
         except:
             data = sc.read_10x_mtx(filename)
-    # if type=='10x_h5':
-    #     data = sc.read_10x_h5(filename)
-    # elif type == '10x_mtx':
-    #     data = sc.read_10x_mtx(filename)
-    # else:
-    #     data = sc.read(filename)
     return data
 
 # This code is from Scanpy
 def get_indices_distance_from_dense_matrix(D, neighSize: int, returnDis=True):
     '''
-    :param D: a distance matrix with
-    :param neighSize:
-    :param returnDis:
-    :return: The neignhor distances or neighbor indices. 
+    Get the k-nearest neighbors from a distance matrix.
+    :param D: A distance matrix.
+    :param neighSize: The number of neighbors.
+    :param returnDis: whether to return a distance matrix of k neighbors.
+    :return: The neighbors' distances or neighbors' indices.
     '''
     sample_range = np.arange(D.shape[0])[:, None]
     indices = np.argpartition(D, neighSize, axis=1)[:, :neighSize]
@@ -65,33 +80,31 @@ def get_indices_distance_from_dense_matrix(D, neighSize: int, returnDis=True):
         
 def pdist2_fast(A, B, metric='euclidean'):
     '''
-    compute distabce between A and B with different method
-    A: 2D array
-    B: 2D array
-    euclidean: ['sqeuclidean','euclidean','L1','cosine']
-    return: dist matrix of A and B
+    Compute distance between A and B with different methods.
+    :param A: 2D array
+    :param B: 2D array
+    :param euclidean: ['sqeuclidean','euclidean','L1','cosine']
+    return: The distance between the corresponding rows of A and B.
     '''
     if metric == 'L1':
-        res = spatial.distance.cdist(A, B, metric='minkowski', p=1, V=None,
-                                     VI=None, w=None)
+        res = spatial.distance.cdist(A, B, metric='minkowski', p=1)
     elif metric == 'sqeuclidean':
-        res = spatial.distance.cdist(A, B, metric='sqeuclidean', p=None, V=None,
-                                     VI=None, w=None)
+        res = spatial.distance.cdist(A, B, metric='sqeuclidean')
     elif metric == 'euclidean':
-        res = spatial.distance.cdist(A, B, metric='euclidean', p=None, V=None,
-                                     VI=None, w=None)
+        res = spatial.distance.cdist(A, B, metric='euclidean')
     elif metric == 'cosine':
-        res = spatial.distance.cdist(A, B, metric='cosine', p=None, V=None,
-                                     VI=None, w=None)
+        res = spatial.distance.cdist(A, B, metric='cosine')
     else:
         print('unknown metric')
     return res
 
 def fast_kmeans_scipy(ds, k, max_iter=20):
     '''
+    Fast implementation of kmeans.
     :param ds: Data used for clustering.
     :param k: The number of clustering.
     :param max_iter: Maximum number of iterations.
+    :return The label of each data points.
     '''
     m, n = ds.shape
     result = np.empty(m, dtype=int)
@@ -119,7 +132,7 @@ def getRepresentativesByHybridSelection(fea, pSize, cntTimes=10, seed=1):
     Select pSize representatives by hybrid selection.
     :param fea: Input data.
     :param pSize: The number of representatives.
-    :return:The pSize cluster centers as the final representatives.
+    :return: The pSize cluster centers as the final representatives.
     '''
     N = fea.shape[0]
     # randomly select pSize * cntTimes candidate representatives.
@@ -160,13 +173,17 @@ def partition(nums, start, end, k):
     return nums[k]
     
 def kthLargestElement(k, A):
-    '''Find the kth largest number'''
+    '''
+    Find the kth largest number.
+    '''
     if not A or k < 1 or k > len(A):
         return None
     return partition(A, 0, len(A) - 1, len(A) - k)
 
 def Estimatekbyeigen(vector, gapth=4):
-    '''Estimate the number of k by eigenvectors of bipartite graph'''
+    '''
+    Estimate the number of k by eigenvectors of bipartite graph
+    '''
     vecbin = pd.cut(np.abs(vector) ** 0.0001, 1000).value_counts()
     diff = np.argwhere(vecbin.values != 0).squeeze()[1:] - np.argwhere(vecbin.values != 0).squeeze()[0:-1]
     thre = kthLargestElement(gapth, diff.tolist())
@@ -178,7 +195,7 @@ def Tcut_for_bipartite_graph(B, Nseg,eskMethod, gapth=4,maxKmIters=100,
                              cntReps=3,clusterMethod='Kmeans',
                              eps=0.1, min_samples=100):
     '''
-    Bipartite graph partition by transfer-cuts 
+    Bipartite graph partition by transfer-cuts.
     '''
     Nx, Ny = B.shape
     # if Ny < Nseg:
@@ -212,15 +229,15 @@ def Tcut_for_bipartite_graph(B, Nseg,eskMethod, gapth=4,maxKmIters=100,
                      init='k-means++').fit(evec)
     elif clusterMethod == 'DBSCAN':
         lab = DBSCAN(eps=eps, min_samples=min_samples).fit(evec)
-    elif clusterMethod=='AgglomerativeClustering':
+    elif clusterMethod == 'AgglomerativeClustering':
         lab = AgglomerativeClustering(n_clusters=Nseg).fit(evec)
     else:
-        print('Unknow clustering method.')
+        print('Unknown clustering method. please choose one of [kmeans, DBSCAN, AgglomerativeClustering].')
     return lab.labels_,Nseg
 
 def EstimatekbysubGraph(RpfeaDist, RpFeaKnnIdx, resolution, addweights,Knn=5):
     '''
-    Estimated the clustering by graph built by anchors
+    Estimated the clustering by graph built by anchors.
     '''
     # RpFeaKnnIdx5 = RpFeaKnnIdx[:,0:Knn]
     index = np.array([[i] * Knn for i in range(RpFeaKnnIdx.shape[0])]).flatten()
@@ -238,57 +255,72 @@ def EstimatekbysubGraph(RpfeaDist, RpFeaKnnIdx, resolution, addweights,Knn=5):
                                           seed=0, resolution_parameter=resolution)
     return np.unique(part_new.membership).shape[0]
 
-@njit(cache=True, parallel=True)
-def NearestRepIndex(fea,RpFea,N,p,
-         repClsLabel,centerDist,
-         distance):
-    cntRepCls = int(p ** 0.5)
-    minCenterIdxs = np.argmin(centerDist, axis=1)
-    nearestRepInRpFeaIdx = np.empty(N, dtype='int64')
-    for i in prange(cntRepCls):
-        tmp = np.where(repClsLabel == i)[0]
-        nearestRepInRpFeaIdx[minCenterIdxs == i] = np.argmin(pdist2_fast(fea[minCenterIdxs == i, :],
-                                                                         RpFea[tmp, :], metric=distance), axis=1)
-        nearestRepInRpFeaIdx[minCenterIdxs == i] = tmp[nearestRepInRpFeaIdx[minCenterIdxs == i]]
-    return nearestRepInRpFeaIdx
+def Multi_process_cntRepCls(fea, repClsLabel_m, nearestRepInRpFeaIdx_m,
+                        minCenterIdxs_m, RpFea_m, distance, i):
+    # qq = i
+    tmp = np.where(repClsLabel_m == i)[0]
+    nearestRepInRpFeaIdx_m[minCenterIdxs_m == i] = np.argmin(pdist2_fast(fea[minCenterIdxs_m == i, :],
+                                                                     RpFea_m[tmp, :], metric=distance), axis=1)
+    pp = tmp[nearestRepInRpFeaIdx_m[minCenterIdxs_m == i]]
+    return pp
 
-# adj_param=False can remove
-def secuer(fea, Ks=None,
-          distance='euclidean',
-          p=1000,
-          Knn=5,
-          mode='secuer',
-          eskMethod = 'subGraph',
-          eskResolution=0.8,
-          addweights=False,
-          seed=1,
-          gapth=4,
-          clusterMethod='Kmeans',
-          maxTcutKmIters=100,
-          cntTcutKmReps=3):
-        '''
+def Multi_RpFeaKnnDist(fea, nearestRepInRpFeaIdx,RpFea,RpFeaKnnIdx,distance, i):
+    pp = pdist2_fast(fea[nearestRepInRpFeaIdx == i, :],
+                RpFea[RpFeaKnnIdx[i, :], :],
+                metric=distance)
+    return pp
+
+def secuer(fea,
+           Ks=None,
+           distance='euclidean',
+           p=1000,
+           Knn=5,
+           mode='secuer',
+           eskMethod = 'subGraph',
+           eskResolution=0.8,
+           addweights=False,
+           seed=1,
+           gapth=4,
+           clusterMethod='Kmeans',
+           Gaussiankernel = 'localscaled',
+           maxTcutKmIters=100,
+           cntTcutKmReps=3,
+           multiProcessState=False,
+           num_mutiProcesses=4
+           ):
+    '''
     Cluster cell using Secuer.
-    :param fea: A expression matrix with cell by gene.
+    :param fea: A expression matrix with cells by genes.
     :param distance: str, default=euclidean. The metrics of distance. Can be sqeuclidean, euclidean, L1, cosine.
     :param p: int, default=1000. The number of anchors.
-    :param knn: int, default=7. The number of neighbors of anchors for each cell.
+    :param Knn: int, default=7. The number of neighbors of anchors for each cell.
     :param mode: str, default=secuer. secuer for performing secuer or secuer-C when using secuerconsensus function.
     :param eskMethod: str, default=subGraph. The methods to estimate the number of clusters: subGraph or bipart-eigen.
     :param eskResolution: float, default=0.8. The resolution for estimating the clusters when using subGraph.The higher the resolution, the more clusters.
     :param gapth: int, default=4. The gap values of estimating the clusters when using bipart-eigen.The higher the gapth, the more clusters.
-    :param clusterMethod: The final clustering methods in secuer. Can be k-means, DBSCAN and AgglomerativeClustering. Default by k-means
+    :param clusterMethod: str, default=Kmeans. The final clustering methods in secuer. Can be Kmeans, DBSCAN or AgglomerativeClustering.
+    :param Gaussiankernel: str, default=localscaled. The gaussian kernel used to build bipartite graph. Can be localscaled or traditionalscaled.
     :param maxTcutKmIters: int, default=100. The maximum number of iterations for k-means.
     :param cntTcutKmReps: int, default=3. Number of times with different centroid seeds in the k-means.
+    :param multiProcessState: bool, default=False. Whether to use parallel. Recommend to default by False.
+    :param num_mutiProcess: int, default=4. The number of parallel processes.
     :return: 1D-array. The labels for each cell.
     '''
     N = fea.shape[0]  # n*F
     if p > N:
         p = N
+
+    logg = Logger()
+
     # print(p)
     # Get $p$ representatives by hybrid selection
+    if mode == 'secuer':
+        logg.info('Selecting representatives...')
     RpFea = getRepresentativesByHybridSelection(fea, p,seed=seed)
     # Approx.KNN
     # 1.partition RpFea into $cntRepCls$ rep - clusters
+    if mode == 'secuer':
+        logg.info('Approximate KNN...')
     cntRepCls = int(p ** 0.5)
     # 2. find the center of each rep-cluster
     if distance == 'euclidean':
@@ -301,12 +333,23 @@ def secuer(fea, Ks=None,
     gc.collect()
     minCenterIdxs = np.argmin(centerDist, axis=1)
     nearestRepInRpFeaIdx = np.empty(N, dtype='int64')
-    for i in range(cntRepCls):
-        tmp = np.where(repClsLabel == i)[0]
-        nearestRepInRpFeaIdx[minCenterIdxs == i] = np.argmin(pdist2_fast(fea[minCenterIdxs == i, :],
-                                                                         RpFea[tmp, :], metric=distance), axis=1)
-        nearestRepInRpFeaIdx[minCenterIdxs == i] = tmp[nearestRepInRpFeaIdx[minCenterIdxs == i]]
-    del repClsLabel, minCenterIdxs, tmp
+
+    #### parallel
+    if multiProcessState == False:
+        for i in range(cntRepCls):
+            tmp = np.where(repClsLabel == i)[0]
+            nearestRepInRpFeaIdx[minCenterIdxs == i] = np.argmin(pdist2_fast(fea[minCenterIdxs == i, :],
+                                                                             RpFea[tmp, :], metric=distance), axis=1)
+            nearestRepInRpFeaIdx[minCenterIdxs == i] = tmp[nearestRepInRpFeaIdx[minCenterIdxs == i]]
+        del repClsLabel, minCenterIdxs, tmp
+
+    else:
+        pool = Pool(num_mutiProcesses)
+        func = partial(Multi_process_cntRepCls,fea, repClsLabel, nearestRepInRpFeaIdx, minCenterIdxs, RpFea, distance)
+        outputs = pool.map(func, np.arange(0, cntRepCls,1))
+        for i in range(cntRepCls):
+            nearestRepInRpFeaIdx[minCenterIdxs == i] = outputs[i]
+        del outputs
     gc.collect()
     # For each object, compute its distance to the candidate neighborhood of its nearest representative (in RpFea)
     neighSize = 10 * Knn
@@ -316,31 +359,55 @@ def secuer(fea, Ks=None,
     RpFeaKnnIdx = get_indices_distance_from_dense_matrix(RpfeaDist,
                                                          neighSize + 1,
                                                          returnDis=False)  # p * neighSize+1
+
     # estimate k
     if not Ks and eskMethod=='subGraph':
+        if mode == 'secuer':
+            logg.info('Estimating the number of clustering...')
         # start=time.time()
         Ks = EstimatekbysubGraph(RpfeaDist, RpFeaKnnIdx, eskResolution,
                                  addweights,Knn=Knn)
     del RpfeaDist
     gc.collect()
     RpFeaKnnDist = np.zeros([N, np.shape(RpFeaKnnIdx)[1]])
-    for i in range(p):
-        RpFeaKnnDist[nearestRepInRpFeaIdx == i, :] = pdist2_fast(fea[nearestRepInRpFeaIdx == i, :],
-                                                                 RpFea[RpFeaKnnIdx[i, :], :],
-                                                                 metric=distance)
+
+    # new add
+    if multiProcessState == False:
+        for i in range(p):
+            RpFeaKnnDist[nearestRepInRpFeaIdx == i, :] = pdist2_fast(fea[nearestRepInRpFeaIdx == i, :],
+                                                                     RpFea[RpFeaKnnIdx[i, :], :],
+                                                                     metric=distance)
+    else:
+        pool = Pool(num_mutiProcesses)
+        RpFeaKnnDist_func = partial(Multi_RpFeaKnnDist,
+                                    fea, nearestRepInRpFeaIdx,RpFea,RpFeaKnnIdx,distance)
+        outputs = pool.map(RpFeaKnnDist_func, np.arange(0, p, 1))
+        for i in range(p):
+            #### Calculate distance between neighbors and raw data
+            RpFeaKnnDist[nearestRepInRpFeaIdx == i, :] = outputs[i]
     # Get the final KNN according to the candidate neighborhood.
-    RpFeaKnnIdxFull = RpFeaKnnIdx[nearestRepInRpFeaIdx, :]  # 得到每个样本对应的最近的10*knn+1个邻居
+    # Get the nearest 10*knn+1 neighbors corresponding to each sample
+    RpFeaKnnIdxFull = RpFeaKnnIdx[nearestRepInRpFeaIdx, :]
     knnIdx1, knnDist = get_indices_distance_from_dense_matrix(RpFeaKnnDist, Knn)  #
     knnIdx = RpFeaKnnIdxFull[np.arange(N)[:, None], knnIdx1]
     del knnIdx1, RpFeaKnnIdxFull, RpFeaKnnDist
     gc.collect()
+    if mode == 'secuer':
+        logg.info('Bipartite graph partitioning...')
     # Compute the cross-affinity matrix B for the bipartite graph
     if distance == 'cosine':
         Gsdx = 1 - knnDist
     else:
-        knnMeanDiff = np.mean(knnDist, 1)  # use the mean distance of anchors as the kernel parameter $\sigma_i$ for each cell 
-        knnMeanDiff[knnMeanDiff==0] = np.mean(knnDist)
-        Gsdx = np.exp(-(knnDist ** 2) / (2 * knnMeanDiff[:,None] ** 2))
+        if Gaussiankernel == 'localscaled':
+            knnMeanDiff = np.mean(knnDist, 1)  # use the mean distance of anchors as the kernel parameter $\sigma_i$ for each cell
+            knnMeanDiff[knnMeanDiff==0] = np.mean(knnDist)
+            Gsdx = np.exp(-(knnDist ** 2) / (2 * knnMeanDiff[:,None] ** 2))
+        elif Gaussiankernel == 'traditionalscaled':
+            knnMeanDiff = np.mean(knnDist)  # use the mean distance as the kernel parameter $\sigma$
+            Gsdx = np.exp(-(knnDist ** 2) / (2 * knnMeanDiff ** 2))
+
+        else:
+            print(f'Unknown Gaussiankernel. please choose one of [localscaled, traditionalscaled].')
     Gsdx[Gsdx == 0] = 1e-16
     indptr = np.arange(0, N * Knn + 1, Knn)
     B = csr_matrix((Gsdx.copy().ravel(),  # copy the data, otherwise strange behavior here
@@ -354,13 +421,13 @@ def secuer(fea, Ks=None,
         labels, Ks = Tcut_for_bipartite_graph(B, Ks[0], eskMethod,gapth,
                                               maxTcutKmIters, cntTcutKmReps,
                                               clusterMethod=clusterMethod)
-    if mode=='secuer':
+    if mode == 'secuer':
         return labels
     else:
         return labels, Ks
 
 if __name__ == '__main__':
-    file = 'data/'
+    file = 'D://My_data//Allproject//Secuer//Clustering0804//gold_label_data/'
     files = os.listdir(file)
     fileh5sd_gold = [i for i in files if i.endswith('.h5ad')]
     nmi_secuer=[]
@@ -370,18 +437,15 @@ if __name__ == '__main__':
         print(fileh5sd_gold[i])
         data = sc.read(file + fileh5sd_gold[i])
         fea = data.obsm['X_pca']
-        # print(f'{mtx[j]}: secuer')
         start = time.time()
-        # sc.pp.neighbors(data)
-        # sc.tl.louvain(data)
-        # res = data.obs['louvain']
-        res = secuer(fea, p=1000, Knn=7, maxTcutKmIters=100,
-                    cntTcutKmReps=3,seed=1)
+        res = secuer(fea, p=1000, Knn=7,
+                     maxTcutKmIters=100,
+                     cntTcutKmReps=3,seed=1,
+                     multiProcessState=True,
+                     num_mutiProcesses=4
+                     )
         end = time.time() - start
         print(np.unique(res).shape[0],np.unique(data.obs['celltype']).shape[0])
-
-        name_up = 'secuer_lable_' + str(i)
-        data.obs[name_up] = pd.Categorical(res)
         nmi_secuer.append(normalized_mutual_info_score(data.obs['celltype'], res))
         ari_secuer.append(adjusted_rand_score(data.obs['celltype'], res))
         t_secuer.append(end)

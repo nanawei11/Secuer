@@ -13,7 +13,7 @@ import scanpy as sc
 import sys
 from secuer.secuer import (secuer, Read)
 from secuer.secuerconsensus import secuerconsensus
-version = '1.0.8'
+version = '1.0.9'
 import yaml
 import numpy as np
 
@@ -35,13 +35,13 @@ class Logger:
         logg = logging.StreamHandler()
         logg.setFormatter(fmt)
         self.logger.addHandler(logg)
-    
+
     def info(self,message):
         self.logger.info(message)
-    
+
     def war(self,message):
         self.logger.warn(message)
-    
+
     def error(self,message):
         self.logger.error(message)
 
@@ -72,62 +72,82 @@ def main():
     parser1 = subparsers1.add_parser('S', help='Clustering scRNA-seq data using secuer.')
     # parser.add_argument('-h','--help',help="Show this help message and exit.")
     parser1.add_argument('-i','--inputfile',dest='inputfile',
-                        help=f'Input a file with {avail_exts}.')
+                         help=f'Input a file with {avail_exts}.')
     parser1.add_argument('-o','--outfile',dest='outfile',help='The name of output file.',default='output')
     parser1.add_argument('-d', '--distance',dest='distance', 
-                        help='The metric to measure the dissimilarity between cells and anchors. Choose one from [cosine],euclidean,L1,sqeuclidean].',
-                        default='euclidean')
+                         help='The metric to measure the dissimilarity between cells and anchors. Choose one from [cosine],euclidean,L1,sqeuclidean].',
+                         default='euclidean')
     parser1.add_argument('-p','--anchors', dest='p',type=int,
-                       help='Specify the number of anchors.',default=1000)
+                         help='Specify the number of anchors.',default=1000)
     parser1.add_argument('-s', dest='seed', type=int,
-                        help='Set the seed for selceting representatives randomly.',default=1)
+                         help='Set the seed for selceting representatives randomly.',default=1)
 
     parser1.add_argument('--knn',dest='knn', type=int,
-                    help='Specify the number of nearest neighbors.',
-                    default=7)
+                         help='Specify the number of nearest neighbors.',
+                         default=7)
     parser1.add_argument('--eskm',dest='eskMethod', 
-                        help='Specify the method for estimating the number of clusters. Choose one from [subGraph,BiGraph]',
-                        default='subGraph')
+                         help='Specify the method for estimating the number of clusters. Choose one from [subGraph,BiGraph]',
+                         default='subGraph')
     parser1.add_argument('--reso',dest='eskResolution', type=float,
-                    help='Specify the resolution when eskm is subGraph.',
-                    default=0.8)             
+                         help='Specify the resolution when eskm is subGraph.',
+                         default=0.8)
     parser1.add_argument('--gapth', dest='gapth', type=int,
-                    help='Specify the gap-th largest value when eskm is BiGraph.',default=4)
+                         help='Specify the gap-th largest value when eskm is BiGraph.',default=4)
     parser1.add_argument('--cm', dest='clusterMethod', 
-                    help='Specify the method of clustering in Secuer.',default='Kmeans')
-    parser1.add_argument('--transpose',action='store_true' ,dest='istranspose',default=False,
-            help='Whether transpose the the input file. Use it when input file is features by observations.')
+                         help='Specify the method of clustering in Secuer.',default='Kmeans')
+
+    parser1.add_argument('--Gaussiankernel', dest='Gaussiankernel',
+                         help='Specify the gaussian kernel to build bipartite graph in Secuer.',
+                         default='localscaled')
+
+    parser1.add_argument('--multiProcessState', dest='multiProcessState',action='store_true',
+                         help=' Weather use the multiple process.',
+                         default=False)
+    parser1.add_argument('--num_mutiProcesses', dest='num_mutiProcesses', type=int,
+                         help='The number of parallel processes..',
+                         default=4)
+
+    parser1.add_argument('--transpose',action='store_true' ,dest='istranspose',
+                         help='Whether transpose the the input file. Use it when input file is features by observations.',
+                         default=False,)
     parser1.add_argument('--yaml', dest='yamlpath',
                          help='The yaml file path.')
     parser1.add_argument('--plot', action='store_true' ,dest='plot',default=False,
                          help='Whether return the umap and pca scatter plot.')
     parser1.add_argument('--markergene', action='store_true', dest='markergene', default=False,
                          help='Find the rank genes for characterizing groups.')
-    parser1.set_defaults(func='S') # 声明一下名字，方便后面寻找用户输入的是哪个子命令
+    parser1.set_defaults(func='S')  # Declare the name so that you can find out which subcommand the user entered later
 
 
     # secuer consensus
     parser2 = subparsers1.add_parser('C', help='Clustering scRNA-seq data using secuer-consensus.')
     parser2.add_argument('-i','--inputfile',dest='inputfile',
-                        help=f'Input a file with {avail_exts}.')
-    parser2.add_argument('-o','--outfile',dest='outfile',help='The name of output file.',default='outputConsens')
+                         help=f'Input a file with {avail_exts}.')
+    parser2.add_argument('-o','--outfile',dest='outfile',
+                         help='The name of output file.',default='outputConsens')
     parser2.add_argument('-p','--anchors', dest='p',type=int,
-                       help='Specify the the number of anchors.',default=1000)
+                         help='Specify the the number of anchors.',default=1000)
     parser2.add_argument('--knn',dest='knn', type=int,
-                help='Specify the number of nearest neighbors.',
-                default=7)
+                         help='Specify the number of nearest neighbors.',
+                         default=7)
     parser2.add_argument('-M', '--Times',dest='M', type=int,
-                        help='The times of consensus.',
-                        default=6)
+                         help='The times of consensus.',
+                         default=5)
+    parser2.add_argument('--multiProcessState', dest='multiProcessState',action='store_true',
+                         help=' Weather use the multiple process.',
+                         default=False)
+    parser2.add_argument('--num_mutiProcesses', dest='num_mutiProcesses', type=int,
+                         help='The number of parallel processes..',
+                         default=4)
     parser2.add_argument('--transpose',action='store_true' ,dest='istranspose',default=False,
-            help='Wheather transpose the the input file. Use it when input file is features by observations.')
+                         help='Whether transpose the the input file.')
     parser2.add_argument('--yaml', dest='yamlpath',
                          help='The yaml file path.')
     parser2.add_argument('--plot', action='store_true', dest='plot', default=False,
                          help='Whether return the umap and pca scatter plot.')
     parser2.add_argument('--markergene', action='store_true', dest='markergene', default=False,
                          help='Find the rank genes for characterizing groups.')
-    parser2.set_defaults(func='C') # 声明一下名字，方便后面寻找用户输入的是哪个子命令
+    parser2.set_defaults(func='C') # Declare the name so that you can find out which subcommand the user entered later
 
     args = parser.parse_args()
     try:
@@ -203,17 +223,21 @@ def main():
         
         logg.info('performing PCA...')
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
-        print(data.obsm['X_pca'])
+        # print(data.obsm['X_pca'])
         logg.info('Run secuer...')
         res = secuer(fea=data.obsm['X_pca'],
-                    distance=args.distance,
-                    p=args.p,
-                    Knn=args.knn,
-                    clusterMethod = args.clusterMethod,
-                    mode='secuer',
-                    eskMethod =args.eskMethod,
-                    eskResolution=args.eskResolution,
-                    gapth=args.gapth)
+                     distance=args.distance,
+                     p=args.p,
+                     Knn=args.knn,
+                     clusterMethod=args.clusterMethod,
+                     mode='secuer',
+                     eskMethod=args.eskMethod,
+                     eskResolution=args.eskResolution,
+                     gapth=args.gapth,
+                     Gaussiankernel=args.Gaussiankernel,
+                     multiProcessState=args.multiProcessState,
+                     num_mutiProcesses=args.num_mutiProcesses
+                     )
         logg.info(f'Finished: The secuer finds {np.unique(res).shape[0]} clusters.')
         # data.obs['secuer'] = res
         print(f'Note: save result to {args.outfile}/SecuerResult.txt')
@@ -228,7 +252,7 @@ def main():
                 sc.pl.umap(data, color=['Secuer'],save='Secuer.pdf',show=False)
                 sc.pl.pca(data, color=['Secuer'],save='Secuer.pdf',show=False)
         data.write(f'{args.outfile}/SecuerResult.h5ad')
-    #------------------------------------------------------------------------------------
+    #------------------------------------- consensus --------------------------------------------
     if args.func == 'C':
         if not args.inputfile:
             parser.print_help()
@@ -284,13 +308,20 @@ def main():
             flavor=params['hvg']['flavor'],
             n_top_genes=params['hvg']['n_top_genes'],
             span=params['hvg']['span'])
+
         data = data[:, data.var.highly_variable]
         sc.pp.scale(data, max_value=10)
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
         
-        logg.info('Run secuer consesus...')
-        res,k = secuerconsensus(fea=data.obsm['X_pca'],run_secuer=True,p=args.p,Knn=args.knn,
-                M=args.M)
+        logg.info('Run secuer consensus...')
+        res,k = secuerconsensus(fea=data.obsm['X_pca'],
+                                run_secuer=True,
+                                p=args.p,
+                                Knn=args.knn,
+                                M=args.M,
+                                multiProcessState=args.multiProcessState,
+                                num_mutiProcesses=args.num_mutiProcesses
+                                )
 
         print(res)
         # data.obs['secuer'] = res

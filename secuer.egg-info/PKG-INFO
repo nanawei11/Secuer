@@ -1,50 +1,42 @@
 Metadata-Version: 2.1
 Name: secuer
-Version: 1.0.5
+Version: 1.0.9
 Summary: Secuer: ultrafast, scalable and accurate clustering of single-cell RNA-seq data
-Home-page: https://github.com/nanawei
-Author: nnwei
+Home-page: https://github.com/nanawei11/Secuer
+Author: Nana Wei
 Author-email: nanawei11@163.com
 License: MIT
 License-File: LICENSE.txt
 
 # Secuer: ultrafast, scalable and accurate clustering of single-cell RNA-seq data
 
-`Secuer` is a superfast and scalable clustering algorithm for (ultra-)large scRNA-seq data analysis based on spectral clustering.  `Secuer-consensus` is a consensus clustering algorithm with Secuer as a subroutine. In addition, `Secuer` can also be applied to other large-scale omics data with two-dimenational (features * obsevation). For more details see xxx. Secuer is available in Python. 
+`Secuer` is a superfast and scalable clustering algorithm for (ultra-)large scRNA-seq data analysis based on spectral clustering.  `Secuer-consensus` is a consensus clustering algorithm with Secuer as a subroutine. In addition, `Secuer` can also be applied to other large-scale omics data with two-dimensional (features by observations). For more details see [secuer](https://arxiv.org/abs/2205.12432v2).  
 
 The workflow of Secuer:
 
-<img src="D:\My_data\Allproject\Secuer\USPEC\Secuer\Figures\Figure1.png" style="zoom: 33%;" />
+<img src="https://github.com/nanawei11/Secuer/raw/main/Figures/Figure1.png" style="zoom: 33%;" />
 
 ## Installation
-`Secuer` requires [python](https://www.python.org)  to run. 
+
+`Secuer` is available in [python](https://www.python.org). 
 
 ```python
-pip install Secuer
+pip install secuer
 ```
 
 ## Run Seucer (usage)
 
-#### Essential paramters
+#### Essential parameters
 
-To run Secuer with default parameters, you only need to give:
+To run Secuer with default parameters, you only need to specify:
 
 - -i INPUTFILE 
 
-  two-dimensional data (features by observations) file for clustering
+  scRNA-seq data (cells by genes) file for clustering. 
 
-Example for run Secuer with all default parameters:
+* --yaml 
 
-```sh
-$ Secuer S -i ${inputpath} 
-```
-
-
-Example for run Secuer-consensus with all default parameters:
-```sh
-$ Secuer C -i ${inputpath}
-```
-
+  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) for more details.
 
 #### options
 You can also specify the following options:
@@ -53,22 +45,92 @@ You can also specify the following options:
 
   The number of anchors, default by 1000.
 
-* -o OUTFILE
+- -o 
 
   Output file directory and file name, default by output.
 
-- --knn
+- --knn 
+
   The number of k nearest neighbors anchors, default by 7.
 
 - --distance
 
-  The metrics measuring the dissimmlarity between cells or anchors, default by euclidean.
+  The metrics measuring the dissimilarity between cells or anchors, default by euclidean.
+  
+- --transpose
+  
+  Require it if your data is a .csv, .txt or tsv file with features by observations.
+  
+- --eskMethod
+
+  Specify the method used for estimated the number of cluster, default by subGraph.
+
+* --eskResolution
+
+  Specify the resolution when `--eskMethod`  is subGraph, default by 0.8.
+
+* --gapth
+
+  Specify the gapth largest value when `--eskMethod`  is not subGraph.
+
+
+Example for run Secuer with custom parameters:
+
+```sh
+$ Secuer S -i ./example_data/Biase_k3_FPKM_scRNA --yaml ./config.yaml -o ./Biase_result -p 1000 --knn 5 --transpose
+```
 
 ## Output files
 
-1. `output/output.txt` is the clustering reslut:
-     - The clustering label.
-     
+1. `output/SecuerResult.txt` is the clustering result. 
+2. `output/SecuerResult.h5ad` is the preprocessed data with the clustering result.
+
+## Run Seucer-consensus (usage)
+
+#### Essential parameters
+
+To run Secuer-consensus with default parameters, you only need to specify:
+
+- -i 
+
+  two-dimensional data (observations by features) file for clustering. 
+
+* --yaml 
+
+  The parameters of data preprocessing. see [config.yaml](https://github.com/nanawei11/Secuer/blob/main/config.yaml) for more details.
+
+#### options
+You can also specify the following options:
+
+- -p         
+
+  The number of anchors, default by 1000.
+
+- -o 
+
+  Output file directory and file name, default by outputCon.
+
+* -M 
+
+	The times to run secuer.
+
+* --knn 
+
+	The number of k nearest neighbors anchors, default by 7.
+
+- --transpose
+  Require it if your data is a .csv, .txt or tsv file with genes by cells, default by False.
+
+Example for run Secuer-consensus:
+```sh
+$ Secuer C -i ./example_data/Biase_k3_FPKM_scRNA --yaml ./config.yaml -o ./Biase_conresult  -p 900 --knn 5 -M 7 --transpose
+```
+
+
+
+## Output files
+
+1. `output/SecuerConsensusResult.txt` is the clustering result. 
+2. `output/SecuerConsensusResult.h5ad` is the preprocessed data with the clustering result.
 
 ## Citation
-

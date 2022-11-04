@@ -8,35 +8,79 @@ from sklearn.metrics.cluster import normalized_mutual_info_score
 import time
 import pandas as pd
 import sys
-from scipy.sparse import issparse, csr_matrix
-from secuer.secuer import (secuer, Tcut_for_bipartite_graph)
-# random_rep=True,adj_param=False can remove
-# __all__ = ['secuerconsensus']
-def secuerconsensus(fea,
-          k=None,
-          run_secuer=True,
-          M=20,
-          p=1000,
-          Knn=5):
+from scipy.sparse import csr_matrix
+from multiprocessing.pool import ThreadPool as Pool
+from functools import partial
+sys.path.append("..")
 
-    baseCls,ks = secuerC_EnsembleGeneration(run_secuer = run_secuer,
-                                       fea = fea, M=M, p= p,
-                                       Knn=Knn
-                                       )
+from secuer.secuer import (secuer, Tcut_for_bipartite_graph, Logger)
+logg = Logger()
+
+def secuerconsensus(fea,
+                    k=None,
+                    run_secuer=True,
+                    M=5,
+                    p=1000,
+                    Knn=5,
+                    multiProcessState=False,
+                    num_multiProcesses=4):
+    '''
+     Perform the consensus function.
+    :params fea: A expression matrix with cells by genes or a clustering result with cells by clusters.
+    :params k: int, default=None. The number of clusters, automatically estimated if None.
+    :params run_secuer: bool, default=True. Call secuer to use the ensemble to get the final result, if the input fea is
+            the clustering result obtained by different methods, set it to False.
+    :params M: int, default=5. The number of consensus times.
+    :params p: int, default=1000:. The number of representatives using in secuer.
+    :params Knn: int, default=5. default=5: The k nearest neighbors using in secuer.
+    :param multiProcessState: bool, default=False. Whether to use parallel. Recommend to default by False.
+    :param num_multiProcesses: int, default=4. The number of parallel processes.
+    :return: 1D-array. The labels for each cell.
+    '''
+    baseCls, ks = secuerC_EnsembleGeneration(fea=fea, M=M, p=p,
+                                             Knn=Knn,
+                                             run_secuer=run_secuer,
+                                             multiProcessState=multiProcessState,
+                                             num_multiProcesses=num_multiProcesses)
     print('Performing the consensus function...')
     if not k:
         k=Counter(ks).most_common(1)[0][0]
     L = secuerC_ConsensusFunction(baseCls, k)
     return L,k
 
+def Multi_secuer(fea, p, Knn, resolution, distance1,maxTcutKmIters=1, cntTcutKmReps=5,j = 0):
+    logg.info(f'Running secuer {j + 1}')
+    res, ks = secuer(fea=fea,
+                     eskMethod='subGraph',
+                     eskResolution = resolution[j],
+                     mode='Consensus',
+                     distance = distance1[j],
+                     p = p,
+                     Knn=Knn,
+                     maxTcutKmIters=maxTcutKmIters,
+                     cntTcutKmReps=cntTcutKmReps,
+                     seed = j)
+    return res, ks
+
 # random_rep=True,adj_param=False can remove
-def secuerC_EnsembleGeneration(run_secuer,
-                             fea, M, p=1000,
-                             Knn=5):
+def secuerC_EnsembleGeneration(fea,
+                               M,
+                               p=1000,
+                               Knn=5,
+                               run_secuer=True,
+                               multiProcessState=False,
+                               num_multiProcesses=4):
     '''
-    Generate M base cluserings.
-    The number of clusters in each base clustering is randomly selected in
-    the range of [lowK, upK].
+    Cluster cell using SecuerConsensus.
+    :param fea: A expression matrix with cell by gene or a matrix with multiple clustering results by other methods.
+    :param p: int, default=1000. The number of anchors.
+    :param knn: int, default=5. The number of neighbors of anchors for each cell.
+    :param run_secuer: default=True. True if fea is a expression matrix. False if fea is a matrix with multiple clustering results.
+
+    :param multiProcessState: bool, default=False. whether use the multiple process.
+
+    :param num_multiProcesses: int, default=4. The number of threadPool.
+    :return:The pSize cluster centers as the final representatives.
     '''
     N = fea.shape[0]
     if p > N:
@@ -44,12 +88,12 @@ def secuerC_EnsembleGeneration(run_secuer,
 
     tcutKmIters = 5
     tcutKmRps = 1
-    if N<1000:
+    if N < 1000:
         resolution = [float(i / 10) for i in range(1, M + 1)]
     else:
         if M < 11:
             resolution = [float(i / 10) for i in range(2, M*2+1, 2)]
-        elif  M>=11 and M<21:
+        elif  M >= 11 and M < 21:
             resolution = [float(i / 10) for i in range(2, M+2)]
         else:
             np.random.seed(1)
@@ -60,21 +104,30 @@ def secuerC_EnsembleGeneration(run_secuer,
     if run_secuer:
         members = []
         k = []
-        for j in range(M):
-            print(f'Running secuer {j+1}')
-            res,ks = secuer(fea=fea,eskMethod='subGraph',
-                        eskResolution
-                            =resolution[j],mode='Consensus',
-                        distance=distance1[j],p=p,Knn=Knn,
-                        maxTcutKmIters=tcutKmIters,cntTcutKmReps=tcutKmRps,
-                        seed=1)
-            members += [res.tolist()]
-            k += [ks]
-        members = np.array(members).T
+        if multiProcessState == False:
+            for j in range(M):
+                logg.info(f'Running secuer {j + 1}')
+                res, ks = secuer(fea=fea, eskMethod='subGraph',
+                                 eskResolution=resolution[j], mode='Consensus',
+                                 distance=distance1[j], p=p, Knn=Knn,
+                                 maxTcutKmIters=tcutKmIters, cntTcutKmReps=tcutKmRps,
+                                 seed=j)
+                members += [res.tolist()]
+                k += [ks]
+            members = np.array(members).T
+        else:
+            pool = Pool(num_multiProcesses)
+            func = partial(Multi_secuer, fea, p, Knn, resolution, distance1,
+                           tcutKmIters,tcutKmRps)
+            outputs = pool.map(func, np.arange(M))
+            for i in range(M):
+                members += [outputs[i][0].tolist()]
+                k += [outputs[i][1]]
+            members = np.array(members).T
     else:
         members = fea
 
-    return members,k  # N by M cluster
+    return members, k  # N by M cluster
 
 def secuerC_ConsensusFunction(baseCls, k,
                             maxTcutKmIters=100, cntTcutKmReps=3):
@@ -118,7 +171,12 @@ if __name__ == '__main__':
             sc.pp.neighbors(data,n_pcs=48)
         except:
             sc.pp.neighbors(data, n_pcs=50)
-        res,k = secuerconsensus(run_secuer=True,fea= fea,Knn=5,M=6)
+        res,k = secuerconsensus(run_secuer=True,
+                                fea= fea,
+                                Knn=5,
+                                M=5,
+                                multiProcessState=True,
+                                num_multiProcesses=4)
         print(np.unique(res).shape[0])
         end = time.time() - start
         print(np.unique(res).shape[0],np.unique(data.obs['celltype']).shape[0])
