@@ -67,7 +67,7 @@ You can also specify the following options:
 Example for run Secuer with custom parameters:
 
 ```sh
-$ Secuer S -i ./example_data/Biase_k3_FPKM_scRNA --yaml ./config.yaml -o ./Biase_result -p 1000 --knn 5 --transpose
+$ Secuer S -i ./example_data/Biase_k3_FPKM_scRNA.csv --yaml ./config.yaml -o ./Biase_result -p 1000 --knn 5 --transpose
 ```
 
 ## Output files
@@ -113,7 +113,7 @@ You can also specify the following options:
 
 Example for run Secuer-consensus:
 ```sh
-$ Secuer C -i ./example_data/Biase_k3_FPKM_scRNA --yaml ./config.yaml -o ./Biase_conresult  -p 900 --knn 5 -M 7 --transpose
+$ Secuer C -i ./example_data/Biase_k3_FPKM_scRNA.csv --yaml ./config.yaml -o ./Biase_conresult  -p 900 --knn 5 -M 7 --transpose
 ```
 
 
