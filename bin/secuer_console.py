@@ -28,8 +28,7 @@ from secuer.secuerconsensus import (secuerconsensus,
                     secuerC_EnsembleGeneration,
                     secuerC_ConsensusFunction)
 
-version = '1.0.9'
-
+version = '1.0.11'
 import yaml
 import numpy as np
 
@@ -123,7 +122,7 @@ def main():
     parser1.add_argument('--multiProcessState', dest='multiProcessState', action='store_true',
                          help=' Weather use the multiple process.',
                          default=False)
-    parser1.add_argument('--num_mutiProcesses', dest='num_mutiProcesses', type=int,
+    parser1.add_argument('--num_multiProcesses', dest='num_multiProcesses', type=int,
                          help='The number of parallel processes..',
                          default=4)
 
@@ -155,7 +154,7 @@ def main():
     parser2.add_argument('--multiProcessState', dest='multiProcessState', action='store_true',
                          help=' Weather use the multiple process.',
                          default=False)
-    parser2.add_argument('--num_mutiProcesses', dest='num_mutiProcesses', type=int,
+    parser2.add_argument('--num_multiProcesses', dest='num_multiProcesses', type=int,
                          help='The number of parallel processes..',
                          default=4)
     parser2.add_argument('--transpose', action='store_true', dest='istranspose', default=False,
@@ -226,7 +225,7 @@ def main():
         sc.pp.normalize_total(data, target_sum=params['norm']['target_sum'])
 
         sc.pp.log1p(data)
-        logg.info('selecting highly varibale genes...')
+        logg.info('selecting highly variable genes...')
         try:
             sc.pp.highly_variable_genes(data,
                                         min_mean=params['hvg']['min_mean'],
@@ -240,9 +239,11 @@ def main():
         except:
             sc.pp.scale(data, max_value=10)
 
+        logg.war(f'Your data contains {data.shape[0]} observations and {data.shape[1]} features after preprocessing.')
+
         logg.info('performing PCA...')
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
-        print(data.obsm['X_pca'])
+        # print(data.obsm['X_pca'])
         logg.info('Run secuer...')
         res = secuer(fea=data.obsm['X_pca'],
                      distance=args.distance,
@@ -255,7 +256,7 @@ def main():
                      gapth=args.gapth,
                      Gaussiankernel=args.Gaussiankernel,
                      multiProcessState=args.multiProcessState,
-                     num_mutiProcesses=args.num_mutiProcesses
+                     num_multiProcesses=args.num_multiProcesses
                      )
         logg.info(f'Finished: The secuer finds {np.unique(res).shape[0]} clusters.')
         # data.obs['secuer'] = res
@@ -281,7 +282,7 @@ def main():
         assert isinstance(args.p, int), 'p should be int'
         assert isinstance(args.knn, int), 'knn should be int'
         assert isinstance(args.M, int), 'M should be int'
-        params = get_yaml_load_all(args.yamlpath)
+
         ### creat output dir
         if os.path.isfile(args.outfile):
             print(f'Error: cannot create a dir because  %s is exist as a file.')
@@ -296,17 +297,18 @@ def main():
              \noutfile:{args.outfile}.")
 
         # yaml_path = os.path.join('./', "test.yaml")
-        params = get_yaml_load_all(args.yaml_path)
+        params = get_yaml_load_all(args.yamlpath)
         logg = Logger()
-        print(f'Reading data...\n')
+        logg.info('Reading data...')
         data = Read(args.inputfile, istranspose=args.istranspose)
         logg.war(f'Your data contains {data.shape[0]} observations and {data.shape[1]} features.')
-        print('processing....\n')
+        logg.info('filtering genes...')
         data.var_names_make_unique()
         # filter gene
         sc.pp.filter_genes(data,
                            min_counts=params['gene']['min_counts'], min_cells=params['gene']['min_cells'],
                            max_counts=params['gene']['max_counts'], max_cells=params['gene']['max_cells'])
+        logg.info('filtering cells...')
         # filter cell
         sc.pp.filter_cells(
             data,
@@ -315,10 +317,12 @@ def main():
             max_counts=params['cell']['max_counts'],
             max_genes=params['cell']['max_genes'])
 
+        logg.info('normalizing data...')
         # normalize
         sc.pp.normalize_total(data, target_sum=params['norm']['target_sum'])
         # log
         sc.pp.log1p(data)
+        logg.info('selecting highly variable genes...')
         # hvg
         sc.pp.highly_variable_genes(data,
                                     min_mean=params['hvg']['min_mean'],
@@ -329,6 +333,8 @@ def main():
                                     span=params['hvg']['span'])
 
         data = data[:, data.var.highly_variable]
+        logg.war(f'Your data contains {data.shape[0]} observations and {data.shape[1]} features after preprocessing.')
+        logg.info('performing PCA...')
         sc.pp.scale(data, max_value=10)
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
 
@@ -339,10 +345,10 @@ def main():
                                  Knn=args.knn,
                                  M=args.M,
                                  multiProcessState=args.multiProcessState,
-                                 num_mutiProcesses=args.num_mutiProcesses
+                                 num_multiProcesses=args.num_multiProcesses
                                  )
 
-        print(res)
+        # print(res)
         # data.obs['secuer'] = res
         logg.info(f'Finished: The secuer finds {np.unique(res).shape[0]} clusters')
         print(f'Note: save result to {args.outfile}/SecuerConsenResult.txt')

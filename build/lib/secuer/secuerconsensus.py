@@ -155,8 +155,8 @@ def secuerC_ConsensusFunction(baseCls, k,
     return labels
 
 if __name__ == '__main__':
-    file = 'D://My_data//Allproject//Secuer//Clustering0804//gold_label_data/'
-    files = os.listdir('D://My_data//Allproject//Secuer//Clustering0804//gold_label_data/')
+    file = 'gold_label_data/'
+    files = os.listdir(file)
     fileh5sd_gold = [i for i in files if i.endswith('.h5ad')]
     fileh5sd_gold
     nmi_secuerC = []
