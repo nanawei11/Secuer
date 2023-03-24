@@ -14,7 +14,6 @@ data/goolam_pca.h5ad
 data/kolodziejczyk_pca.h5ad
 data/pollen_pca.h5ad
 data/yan_pca.h5ad
-data_preprocessing/DataPreprocess.ipynb
 example_data/Biase_k3_FPKM_scRNA.csv
 example_data/Biase_k3_label.csv
 secuer/__init__.py

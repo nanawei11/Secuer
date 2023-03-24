@@ -1,1 +1,1 @@
-from . import secuer_console
+from .secuer_console import *
