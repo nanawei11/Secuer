@@ -1,7 +1,7 @@
 #!/usr/secuer_console/env python
 # coding: utf-8
-from pathlib import Path
-import yaml
+# from pathlib import Path
+# import yaml
 from scipy.linalg import eigh
 from scipy.sparse import issparse, csr_matrix
 from scipy import spatial
