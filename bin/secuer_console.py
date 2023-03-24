@@ -12,23 +12,11 @@ from nbformat import read
 import sys
 sys.path.append("..")
 from secuer.secuer import (secuer,
-                    Read,
-                    get_indices_distance_from_dense_matrix,
-                    pdist2_fast,
-                    fast_kmeans_scipy,
-                    getRepresentativesByHybridSelection,
-                    partition,
-                    kthLargestElement,
-                    Estimatekbyeigen,
-                    Tcut_for_bipartite_graph,
-                    EstimatekbysubGraph,
-                    NearestRepIndex)
+                    Read)
 
-from secuer.secuerconsensus import (secuerconsensus,
-                    secuerC_EnsembleGeneration,
-                    secuerC_ConsensusFunction)
+from secuer.secuerconsensus import (secuerconsensus)
 
-version = '1.0.11'
+version = '1.0.12'
 import yaml
 import numpy as np
 
@@ -197,7 +185,7 @@ def main():
         elif os.path.isdir(args.outfile):
             print('Warning: output dir is exist, write output result in existing dir.')
         else:
-            os.system("mkdir %s" % (args.outfile))
+            os.mkdir(args.outfile)
 
         print(f"Your input parameters are: \ninputfile:{args.inputfile},\
              \t\np: {args.p},\t\nknn:{args.knn},\ndistance: {args.distance},\
@@ -290,7 +278,7 @@ def main():
         elif os.path.isdir(args.outfile):
             print('Warning: output dir is exist, write output result in existing dir.')
         else:
-            os.system("mkdir %s" % (args.outfile))
+            os.mkdir(args.outfile)
 
         print(f"Your input parameters are: inputfile:{args.inputfile},\
              \np: {args.p},\nknn:{args.knn},\nM: {args.M}\
@@ -339,7 +327,7 @@ def main():
         sc.tl.pca(data, svd_solver=params['pca']['svd_solver'])
 
         logg.info('Run secuer consensus...')
-        res, k = secuerconsensus(fea=data.obsm['X_pca'],
+        res = secuerconsensus(fea=data.obsm['X_pca'],
                                  run_secuer=True,
                                  p=args.p,
                                  Knn=args.knn,

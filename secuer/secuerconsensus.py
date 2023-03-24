@@ -46,7 +46,7 @@ def secuerconsensus(fea,
     if not k:
         k=Counter(ks).most_common(1)[0][0]
     L = secuerC_ConsensusFunction(baseCls, k)
-    return L,k
+    return L
 
 def Multi_secuer(fea, p, Knn, resolution, distance1,maxTcutKmIters=1, cntTcutKmReps=5,j = 0):
     logg.info(f'Running secuer {j + 1}')

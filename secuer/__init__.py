@@ -1,2 +1,2 @@
-from . import secuer
-from . import secuerconsensus
+from .secuer import *
+from .secuerconsensus import *
