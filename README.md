@@ -155,7 +155,7 @@ resC = sr.secuerconsensus(run_secuer=True,
                           fea= fea,
                           Knn=5,
                           M=5,
-                        multiProcessState=True,
+                          multiProcessState=True,
                           num_multiProcesses=4)
 ```
 
@@ -163,5 +163,5 @@ resC = sr.secuerconsensus(run_secuer=True,
 
 ## Citation
 
-Wei N, Nie Y, Liu L, Zheng X, Wu HJ (2022) Secuer: Ultrafast, scalable and accurate clustering of single-cell RNA-seq data. PLOS Computational Biology 18(12): e1010753. https://doi.org/10.1371/journal.pcbi.1010753.
+Wei N, Nie Y, Liu L, Zheng X, Wu H-J (2022) Secuer: Ultrafast, scalable and accurate clustering of single-cell RNA-seq data. PLOS Computational Biology 18(12): e1010753. https://doi.org/10.1371/journal.pcbi.1010753.
 
