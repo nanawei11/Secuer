@@ -26,7 +26,7 @@ pip install secuer
 
 To run Secuer with default parameters, you only need to specify:
 
-- -i INPUTFILE 
+- -i 
 
   scRNA-seq data (cells by genes) file for clustering. 
 
